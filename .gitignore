@@ -1,0 +1,34 @@
+# Python caches
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environments
+.venv/
+venv/
+
+# Tooling caches
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+.coverage
+
+# Editors/IDE
+.idea/
+.vscode/
+
+# Build/dist
+dist/
+build/
+
+# Local artifacts from capture
+output/
+tmp_out/
+*.bag
+*.mp4
+*.npy
+*.png
+
+# Development
+temp

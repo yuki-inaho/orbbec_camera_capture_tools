@@ -1,0 +1,20 @@
+[project]
+name = "orbbec-camera-capture-tools"
+version = "0.1.0"
+description = "Orbbec Gemini 335Le capture tool (raw/bag recording)"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "numpy",
+    "opencv-python",
+    "pytest",
+    "ruff",
+    "pyorbbecsdk @ https://github.com/orbbec/pyorbbecsdk/releases/download/v2.0.15/pyorbbecsdk-2.0.15-cp311-cp311-linux_x86_64.whl ; python_version == '3.11' and platform_system == 'Linux'",
+]
+
+[tool.ruff]
+line-length = 120
+
+[tool.pytest.ini_options]
+addopts = "-ra"
+pythonpath = ["."]
