@@ -75,6 +75,75 @@ class OrbbecDevice(CameraDevice):
         }
         self._recorder: Optional[Any] = None
 
+    def has_imu(self) -> bool:
+        """Return True if device exposes both ACCEL and GYRO sensors."""
+
+        if not self._device:
+            raise RuntimeError("Device not opened")
+        sensor_list = self._device.get_sensor_list()
+        has_accel = False
+        has_gyro = False
+        for idx in range(sensor_list.get_count()):
+            sensor = sensor_list.get_sensor_by_index(idx)
+            sensor_type = sensor.get_type()
+            if sensor_type == sdk.OBSensorType.ACCEL_SENSOR:
+                has_accel = True
+            if sensor_type == sdk.OBSensorType.GYRO_SENSOR:
+                has_gyro = True
+        return has_accel and has_gyro
+
+    def read_imu(self, timeout_ms: int = 1000) -> Tuple[Optional[Dict[str, float]], Optional[Dict[str, float]]]:
+        """Read one accel/gyro sample if IMU is available.
+
+        Args:
+            timeout_ms: Timeout in milliseconds for IMU frame retrieval.
+
+        Returns:
+            Tuple of (accel_dict, gyro_dict). Each dict contains x, y, z, timestamp_us when available; otherwise None.
+
+        Raises:
+            RuntimeError: If device is not opened or IMU is not available.
+        """
+
+        if not _SDK_AVAILABLE or isinstance(sdk, _SdkUnavailable):
+            raise RuntimeError("pyorbbecsdk is required but not available")
+        if not self._device:
+            raise RuntimeError("Device not opened")
+        if not self.has_imu():
+            raise RuntimeError("IMU sensors not available on this device")
+
+        imu_pipeline = sdk.Pipeline(self._device)
+        imu_config = sdk.Config()
+        imu_config.enable_accel_stream()
+        imu_config.enable_gyro_stream()
+        imu_pipeline.start(imu_config)
+        try:
+            frames = imu_pipeline.wait_for_frames(timeout_ms)
+            accel_data: Optional[Dict[str, float]] = None
+            gyro_data: Optional[Dict[str, float]] = None
+            if frames:
+                accel_frame = frames.get_frame(sdk.OBFrameType.ACCEL_FRAME)
+                gyro_frame = frames.get_frame(sdk.OBFrameType.GYRO_FRAME)
+                if accel_frame:
+                    a = accel_frame.as_accel_frame()
+                    accel_data = {
+                        "x": float(a.get_x()),
+                        "y": float(a.get_y()),
+                        "z": float(a.get_z()),
+                        "timestamp_us": float(a.get_timestamp()),
+                    }
+                if gyro_frame:
+                    g = gyro_frame.as_gyro_frame()
+                    gyro_data = {
+                        "x": float(g.get_x()),
+                        "y": float(g.get_y()),
+                        "z": float(g.get_z()),
+                        "timestamp_us": float(g.get_timestamp()),
+                    }
+            return accel_data, gyro_data
+        finally:
+            imu_pipeline.stop()
+
     def open(self) -> None:
         """Initialize context, select device, and prepare pipeline/config."""
 

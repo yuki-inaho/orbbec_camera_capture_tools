@@ -78,3 +78,43 @@ def test_bag_recording(tmp_path) -> None:
     device.stop()
     device.close()
     assert bag_path.exists() or True  # bag file generation is SDK-dependent
+
+
+@pytest.mark.hardware
+def test_imu_streams() -> None:
+    """Enable accel/gyro streams via SDK and fetch one frame each."""
+
+    try:
+        import pyorbbecsdk as sdk  # type: ignore
+    except ImportError:
+        pytest.skip("pyorbbecsdk not available")
+
+    ctx = sdk.Context()
+    device_list = ctx.query_devices()
+    if device_list.get_count() == 0:
+        pytest.skip("No device found")
+
+    device = device_list.get_device_by_index(0)
+    sensor_list = device.get_sensor_list()
+    sensor_types = [sensor_list.get_sensor_by_index(i).get_type() for i in range(sensor_list.get_count())]
+    has_accel = any(t == sdk.OBSensorType.ACCEL_SENSOR for t in sensor_types)
+    has_gyro = any(t == sdk.OBSensorType.GYRO_SENSOR for t in sensor_types)
+    if not (has_accel and has_gyro):
+        pytest.skip("Device does not expose ACCEL/GYRO sensors")
+
+    pipeline = sdk.Pipeline(device)
+    config = sdk.Config()
+    config.enable_accel_stream()
+    config.enable_gyro_stream()
+    pipeline.start(config)
+    try:
+        frames = pipeline.wait_for_frames(1000)
+        assert frames is not None
+        accel_frame = frames.get_frame(sdk.OBFrameType.ACCEL_FRAME)
+        gyro_frame = frames.get_frame(sdk.OBFrameType.GYRO_FRAME)
+        assert accel_frame is not None
+        assert gyro_frame is not None
+        _ = accel_frame.as_accel_frame()
+        _ = gyro_frame.as_gyro_frame()
+    finally:
+        pipeline.stop()
