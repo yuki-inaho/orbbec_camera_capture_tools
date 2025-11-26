@@ -4,7 +4,7 @@ Orbbec Gemini 335Le 向けのキャプチャ/保存/録画ツール
 
 ## 前提
 - Python 3.11 以上（uv 使用）
-- Orbbec SDK: [pyorbbecsdk v2.0.15](https://github.com/orbbec/pyorbbecsdk/releases/tag/v2.0.15) wheel を使用
+- Orbbec SDK: [pyorbbecsdk v2.0.15](https://github.com/orbbec/pyorbbecsdk/releases/tag/v2.0.15)
 
 ## セットアップ
 
